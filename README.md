@@ -1,2 +1,5 @@
 # AutoTest_Instrument
+
 基于MFC的程控软件，通过串口控制一个正弦波模块，然后通过VISA库用Agilent的USB功率计读取模块的数据，并将数据保存到access数据库中
+
+编译环境为64win10操作系统下VS2013，使用的VISA库是安装了KeySight的IOLibrary后的地址，access为64位Office 2013，但是安装了access 2010的数据库引擎可再发行程序包。
