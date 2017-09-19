@@ -1,0 +1,2 @@
+# AutoTest_Instrument
+基于MFC的程控软件，通过串口控制一个正弦波模块，然后通过VISA库用Agilent的USB功率计读取模块的数据，并将数据保存到access数据库中
