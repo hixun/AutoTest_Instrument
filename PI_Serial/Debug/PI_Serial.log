@@ -1,18 +1,20 @@
-﻿Build started 2017/9/19 20:54:16.
-     1>Project "F:\CAT2\Programmable_instrument\Project\PI_Serial_4.1\PI_Serial\PI_Serial.vcxproj" on node 2 (Build target(s)).
+﻿Build started 2017/9/25 17:27:10.
+     1>Project "F:\CAT2\Programmable_instrument\Project\PI_Serial_5.1\PI_Serial\PI_Serial.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          D:\visual studio 2013\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _UNICODE /D UNICODE /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\PI_Serial.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt PI_SerialDlg.cpp
          PI_SerialDlg.cpp
-     1>f:\cat2\programmable_instrument\project\pi_serial_4.1\pi_serial\pi_serialdlg.cpp(578): warning C4101: 'e' : unreferenced local variable
+     1>f:\cat2\programmable_instrument\project\pi_serial_5.1\pi_serial\pi_serialdlg.cpp(641): warning C4804: '-' : unsafe use of type 'bool' in operation
+     1>f:\cat2\programmable_instrument\project\pi_serial_5.1\pi_serial\pi_serialdlg.cpp(641): warning C4552: '-' : operator has no effect; expected operator with side-effect
+     1>f:\cat2\programmable_instrument\project\pi_serial_5.1\pi_serial\pi_serialdlg.cpp(643): warning C4101: 'e' : unreferenced local variable
        Link:
-         D:\visual studio 2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"F:\CAT2\Programmable_instrument\Project\PI_Serial_4.1\Debug\PI_Serial.exe" /INCREMENTAL /NOLOGO /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:"D:\visual studio 2013\VC\Include\Manifest\dpiaware.manifest" /DEBUG /PDB:"F:\CAT2\Programmable_instrument\Project\PI_Serial_4.1\Debug\PI_Serial.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /ENTRY:"wWinMainCRTStartup" /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\CAT2\Programmable_instrument\Project\PI_Serial_4.1\Debug\PI_Serial.lib" /MACHINE:X86 Debug\PI_Serial.res
+         D:\visual studio 2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"F:\CAT2\Programmable_instrument\Project\PI_Serial_5.1\Debug\PI_Serial.exe" /INCREMENTAL /NOLOGO /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:"D:\visual studio 2013\VC\Include\Manifest\dpiaware.manifest" /DEBUG /PDB:"F:\CAT2\Programmable_instrument\Project\PI_Serial_5.1\Debug\PI_Serial.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /ENTRY:"wWinMainCRTStartup" /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\CAT2\Programmable_instrument\Project\PI_Serial_5.1\Debug\PI_Serial.lib" /MACHINE:X86 Debug\PI_Serial.res
          Debug\mscomm.obj
          Debug\PI_Serial.obj
          Debug\PI_SerialDlg.obj
          Debug\stdafx.obj
-         PI_Serial.vcxproj -> F:\CAT2\Programmable_instrument\Project\PI_Serial_4.1\Debug\PI_Serial.exe
-     1>Done Building Project "F:\CAT2\Programmable_instrument\Project\PI_Serial_4.1\PI_Serial\PI_Serial.vcxproj" (Build target(s)).
+         PI_Serial.vcxproj -> F:\CAT2\Programmable_instrument\Project\PI_Serial_5.1\Debug\PI_Serial.exe
+     1>Done Building Project "F:\CAT2\Programmable_instrument\Project\PI_Serial_5.1\PI_Serial\PI_Serial.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.98
+Time Elapsed 00:00:01.70

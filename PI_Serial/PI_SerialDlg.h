@@ -47,8 +47,13 @@ public:
 	int count_range;	//幅度步进次数
 
 	int progress_step;	//多少次进度条改变一下
+	long change_step;
 
 	double real_range;
+
+	double Offset_Range;	//要补偿的幅度
+	double Offset_Range1;	//要补偿的幅度
+	double Offset_Range2;	//要补偿的幅度
 
 	_ConnectionPtr m_pConnection;//连接access数据库的链接对象  
 	_RecordsetPtr m_pRecordset;//结果集对象  
@@ -85,4 +90,5 @@ public:
 	afx_msg void OnBnClickedButtonSingleTest();
 	afx_msg void OnBnClickedStartTest();
 	CProgressCtrl m_progress;
+	double m_pOffsetRange;
 };

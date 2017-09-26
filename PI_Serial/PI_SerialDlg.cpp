@@ -1,8 +1,4 @@
-﻿
-// PI_SerialDlg.cpp : implementation file
-//
-
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "PI_Serial.h"
 #include "PI_SerialDlg.h"
 #include "afxdialogex.h"
@@ -60,17 +56,22 @@ CPI_SerialDlg::CPI_SerialDlg(CWnd* pParent /*=NULL*/)    //构造函数
 	, m_dStartRange(0)
 	, m_dStopRange(0)
 	, real_range(0)
+	, m_pOffsetRange(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
 	//对数据初始化
 	m_dStartFreq = 10;
-	m_dStopFreq = 3000;
+	m_dStopFreq = 3200;
 	m_dStartRange = -50;
 	m_dStopRange = +10;
 
 	m_dRealFreq = 50;
 	m_dRealRange = 10;
+
+	Offset_Range = 0;
+	Offset_Range1 = 0;
+	Offset_Range2 = 0;
 
 }
 
@@ -90,6 +91,7 @@ void CPI_SerialDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STEP_FREQ, m_Combo_Stepfreq);
 	DDX_Control(pDX, IDC_STEP_RANGE, m_Combo_Steprange);
 	DDX_Control(pDX, IDC_PROGRESS1, m_progress);
+	DDX_Text(pDX, IDC_EDIT_OFFSET, m_pOffsetRange);
 }
 
 BEGIN_MESSAGE_MAP(CPI_SerialDlg, CDialogEx)
@@ -138,15 +140,16 @@ BOOL CPI_SerialDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
-	m_progress.SetRange(1, 80);		//进度条设置初始化
+	m_progress.SetRange(1, 100);		//进度条设置初始化
 	m_progress.SetStep(1);
 	m_progress.SetPos(0);
 
+	//连接数据库文件
 	try{
 
 		CoInitialize(NULL);
 		m_pConnection = _ConnectionPtr(__uuidof(Connection));
-		m_pConnection->ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=test1.accdb;";
+		m_pConnection->ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=data20170925_3.accdb;";
 		m_pConnection->Open("", "", "", adConnectUnspecified);
 	}
 	catch (_com_error e){
@@ -176,14 +179,14 @@ BOOL CPI_SerialDlg::OnInitDialog()
 	m_Combo_Baud.SetCurSel(11);//预置波特率为"115200"
 
 	//频率步进选择组合框
-	CString str2[] = { _T("0.001"), _T("0.01"), _T("0.1"), _T("1"), _T("10"), _T("20"), _T("40"), _T("50"), _T("100"), _T("200") };
-	for (int i = 0; i<10; i++)
+	CString str2[] = { _T("0.001"), _T("0.01"), _T("0.1"), _T("1"), _T("5"), _T("10"), _T("20"), _T("40"), _T("50"), _T("100"), _T("200") };
+	for (int i = 0; i<11; i++)
 	{
 		int judge_tf = m_Combo_Stepfreq.AddString(str2[i]);
 		if ((judge_tf == CB_ERR) || (judge_tf == CB_ERRSPACE))
 			MessageBox(_T("build stepfreq error!"));
 	}
-	m_Combo_Stepfreq.SetCurSel(6);//预置频率步进为"40"
+	m_Combo_Stepfreq.SetCurSel(3);//预置频率步进为"40"
 
 	//幅度步进选择组合框
 	CString str3[] = { _T("0.05"), _T("0.1"), _T("0.5"), _T("1"), _T("2"), _T("5"), _T("10") };
@@ -388,6 +391,7 @@ void CPI_SerialDlg::OnBnClickedIntZero()
 	viPrintf(Power_Sensors_U2000, "*OPC?\n");
 
 	viScanf(Power_Sensors_U2000, "%s", zero_buf);
+	viFlush(Power_Sensors_U2000, VI_READ_BUF_DISCARD);		//放弃缓读区的内容
 
 	if (zero_buf[0] == '1')
 	{
@@ -486,12 +490,15 @@ void CPI_SerialDlg::OnBnClickedStartTest()
 	num_range = (int)((m_dStopRange - m_dStartRange) / m_dStepRange);	//计算出幅度改变次数
 
 	UpdateData(FALSE);
+
+	change_step = ((num_freq + 1) * (num_range +1)) / 100;
+
 	if (str == _T("开始测试"))
 	{
 		str = _T("停止测试");
 		UpdateData(true);
 		hl->SetWindowText(str);			//改变按钮名称为停止测试
-		SetTimer(1, 1100, NULL);         // 启动定时器，ID为1，定时时间为200ms 
+		SetTimer(1, 500, NULL);         // 启动定时器，ID为1，定时时间为200ms 
 	}else if (str != _T("开始测试"))
 		{
 			str = _T("开始测试");
@@ -500,13 +507,15 @@ void CPI_SerialDlg::OnBnClickedStartTest()
 			KillTimer(1);	// 关闭定时器   
 		}
 }
-
+/**********************************************/
 /************定时器时间到达时处理函数************/
+/**********************************************/
 void CPI_SerialDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	double cur_freq;	//当前频率
 	double cur_range;
 
+	/************通过串口控制安泰信模块输出指定频率和幅度的信号************/
 	CByteArray senddata;
 	const int data_zero = 0x0a;
 	senddata.Add(data_zero);
@@ -517,14 +526,67 @@ void CPI_SerialDlg::OnTimer(UINT_PTR nIDEvent)
 	cur_range = m_dStartRange + count_range *  m_dStepRange;	//当前应该向模块发送的幅度值
 	cur_freq = m_dStartFreq + count_freq * m_dStepFreq;			//当前应该向模块发送的频率值
 
+	UpdateData(TRUE);
+	try
+	{
+		m_pRecordset.CreateInstance(__uuidof(Recordset));
+		CString search_sql;
+		search_sql.Format(_T("SELECT * FROM f11dBmAllOffset WHERE sendFreq= '%d'"), (int)cur_freq);
+		m_pRecordset = ((CPI_SerialDlg*)(AfxGetMainWnd()))->m_pConnection->Execute(search_sql.AllocSysString(), NULL, adCmdText);
+
+		Offset_Range = m_pRecordset->GetCollect("receiveRange").dblVal;
+
+	}
+	catch (_com_error e)
+	{
+	}
+
+	try
+	{
+		m_pRecordset.CreateInstance(__uuidof(Recordset));
+		CString search_sql;
+		search_sql.Format(_T("SELECT * FROM aml_2_0dBm WHERE sendFreq= '%d'"), (int)cur_freq);
+		m_pRecordset = ((CPI_SerialDlg*)(AfxGetMainWnd()))->m_pConnection->Execute(search_sql.AllocSysString(), NULL, adCmdText);
+
+		Offset_Range1 = m_pRecordset->GetCollect("receiveRange").dblVal;
+
+	}
+	catch (_com_error e)
+	{
+	}
+
+	try
+	{
+		m_pRecordset.CreateInstance(__uuidof(Recordset));
+		CString search_sql;
+		search_sql.Format(_T("SELECT * FROM 0dBmnoOffset WHERE sendFreq= '%d'"), (int)cur_freq);
+		m_pRecordset = ((CPI_SerialDlg*)(AfxGetMainWnd()))->m_pConnection->Execute(search_sql.AllocSysString(), NULL, adCmdText);
+
+		Offset_Range2 = m_pRecordset->GetCollect("receiveRange").dblVal;
+
+	}
+	catch (_com_error e)
+	{
+	}
+
+	m_pOffsetRange = Offset_Range - (Offset_Range1 - Offset_Range2);
+//	m_pOffsetRange = Offset_Range;
+
 	COM_Send_freq.Format(_T("FREQ %.3lfMHz"), cur_freq);		//将double型幅度数据转换为安泰信模块固定格式
-	COM_Send_range.Format(_T("POWer:LEVel %.3lfdBm"), cur_range);
+//	COM_Send_range.Format(_T("POWer:LEVel %.3lfdBm"), cur_range);
+//	COM_Send_range.Format(_T("POWer:LEVel %.3lfdBm"), cur_range + m_pOffsetRange);
+	COM_Send_range.Format(_T("POWer:LEVel %.3lfdBm"), cur_range + Offset_Range - (Offset_Range1 - Offset_Range2));
 
-//	m_mscomm.put_Output(COleVariant(COM_Send_freq));	//串口向模块发送数据
-//	m_mscomm.put_Output(COleVariant(COM_Send_range));
-
-	m_mscomm.put_Output(COleVariant(_T("CALibration:ALCValue:CHANel 10MTO1G")));
-	m_mscomm.put_Output(COleVariant(senddata));
+	if (cur_freq <= 1000)
+	{
+		m_mscomm.put_Output(COleVariant(_T("CALibration:ALCValue:CHANel 10MTO1G")));
+		m_mscomm.put_Output(COleVariant(senddata));
+	}
+	else if (cur_freq > 1000)
+	{
+		m_mscomm.put_Output(COleVariant(_T("CALibration:ALCValue:CHANel 1GTO6G")));
+		m_mscomm.put_Output(COleVariant(senddata));
+	}	
 	m_mscomm.put_Output(COleVariant(_T("POWer:ATT 0dB")));
 	m_mscomm.put_Output(COleVariant(senddata));
 	m_mscomm.put_Output(COleVariant(COM_Send_freq));
@@ -532,34 +594,37 @@ void CPI_SerialDlg::OnTimer(UINT_PTR nIDEvent)
 	m_mscomm.put_Output(COleVariant(COM_Send_range));
 	m_mscomm.put_Output(COleVariant(senddata));
 
-	count_range++;
-	if (count_range == num_range + 1)
-	{
-		count_range = 0;
-		count_freq++;
-	}
-	if (count_freq == num_freq + 1)
-	{
-		KillTimer(1);	// 关闭定时器   
-	}
+	Sleep(400);
 
-	Sleep(1000);
-
+	/************向USB功率计发指令，并将实时结果显示在界面上************/
 	viPrintf(Power_Sensors_U2000, "FREQ %fMHz\n", cur_freq);	//USB功率计指令,将double型频率数据转换为USB功率计固定格式
 	viPrintf(Power_Sensors_U2000, "FETC?\n");
 
 	viScanf(Power_Sensors_U2000, "%s", buf);	//读取USB功率计的读数
 	viFlush(Power_Sensors_U2000, VI_READ_BUF_DISCARD);		//放弃缓读区的内容
 
-	UpdateData(TRUE);
+
 	m_dRealFreq = cur_freq;		//将发送给模块的频率，幅度，从功率计读取的数据显示在当前状态栏
 	m_dRealRange = cur_range;
 
 	real_range = strtod(buf, NULL);
 	m_dRealResult = real_range;
 
+	count_range++;
+	if ((count_range == num_range + 1) || (num_range == 0))
+	{
+		count_range = 0;
+		count_freq++;
+	}
+	if ((count_freq == num_freq + 1))
+	{
+		KillTimer(1);	// 关闭定时器   
+		AfxMessageBox(_T("已测试完成！"));
+	}
+
+	/************更新进度条************/
 	progress_step++;
-	if (progress_step == 2)
+	if (progress_step == change_step)
 	{
 		m_progress.StepIt();	//更新进度条
 		progress_step = 0;
@@ -567,17 +632,18 @@ void CPI_SerialDlg::OnTimer(UINT_PTR nIDEvent)
 
 	UpdateData(FALSE);
 
-
+	/************将每次测得的数据存入数据库************/
 	_variant_t RecordsAffected;
 	CString AddSql;
-	AddSql.Format(_T("INSERT INTO data1(sendFreq,sendRange,receiveRange) VALUES(%.3lf,%.3lf,%.3lf)"), m_dRealFreq, m_dRealRange, m_dRealResult);
+	AddSql.Format(_T("INSERT INTO aml_2_13dBmOffset(sendFreq,sendRange,receiveRange) VALUES(%.3lf,%.3lf,%.3lf)"), m_dRealFreq, m_dRealRange, m_dRealResult);
 
-	try{
+	try{-
 		m_pConnection->Execute((_bstr_t)AddSql, &RecordsAffected, adCmdText);
 	}
 	catch (_com_error* e){
 		//		AfxMessageBox(_T("添加用户失败！"));
 	}
+
 
 	CDialogEx::OnTimer(nIDEvent);
 }
